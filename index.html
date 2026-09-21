@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doc Workbench · 문서 자동화 워크벤치</title>
+<meta name="description" content="문서 분석, PDF 텍스트·이미지 추출, 문서 조립을 브라우저 안에서 처리하는 도구. 파일은 서버로 전송되지 않습니다.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111'/%3E%3Cpath d='M11 9v14h4.5a7 7 0 0 0 0-14z' fill='none' stroke='%236fd7ef' stroke-width='2.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<!-- ══ 사이드바 ══ -->
+<aside class="side">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-t">Doc Workbench</div>
+      <div class="brand-s">문서 자동화 워크벤치</div>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="모듈 선택">
+    <button class="nav-i is-on" data-go="m-analyze" aria-current="page">
+      <span class="nav-n">01</span>
+      <span class="nav-b"><span class="nav-k">문서 분석</span><span class="nav-d">글자·단어·특수문자 통계</span></span>
+    </button>
+    <button class="nav-i" data-go="m-text">
+      <span class="nav-n">02</span>
+      <span class="nav-b"><span class="nav-k">텍스트 추출</span><span class="nav-d">PDF → .txt</span></span>
+    </button>
+    <button class="nav-i" data-go="m-image">
+      <span class="nav-n">03</span>
+      <span class="nav-b"><span class="nav-k">이미지 추출</span><span class="nav-d">PDF → .jpg</span></span>
+    </button>
+    <button class="nav-i" data-go="m-build">
+      <span class="nav-n">04</span>
+      <span class="nav-b"><span class="nav-k">문서 조립</span><span class="nav-d">추출 결과 → 편집 가능 문서</span></span>
+    </button>
+  </nav>
+
+  <div class="privacy">
+    <div class="privacy-t"><span class="pdot"></span>로컬 처리</div>
+    <p>업로드한 파일은 서버로 전송되지 않습니다. 모든 처리는 이 브라우저 안에서 끝나며, 페이지를 닫으면 사라집니다.</p>
+  </div>
+
+  <div class="side-foot">
+    <span id="net-state">CDN 라이브러리 확인 중…</span>
+  </div>
+</aside>
+
+<!-- ══ 본문 ══ -->
+<main class="main">
+
+  <!-- ─ 01 분석 ─ -->
+  <section class="mod is-on" id="m-analyze">
+    <header class="mod-h">
+      <div class="mod-k">MODULE 01</div>
+      <h1>문서 분석</h1>
+      <p>글자수, 단어수, 문자 종류별 구성, 특수문자 집계를 한 번에 확인합니다. 보고서 분량을 맞출 때 쓰는 지표 위주로 구성했습니다.</p>
+      <div class="fmt">지원 형식 <code>.txt</code> <code>.md</code> <code>.csv</code> <code>.docx</code> <code>.pdf</code> <code>.hwpx</code></div>
+    </header>
+
+    <div class="drop" id="d-analyze" tabindex="0" role="button" aria-label="분석할 파일 선택 또는 끌어다 놓기">
+      <input type="file" id="f-analyze" multiple accept=".txt,.md,.csv,.log,.json,.docx,.pdf,.hwpx" hidden>
+      <div class="drop-i">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        <strong>파일을 끌어다 놓거나 클릭해서 선택</strong>
+        <span>여러 개를 한 번에 올리면 파일별로 나눠 분석합니다</span>
+      </div>
+    </div>
+
+    <div class="out" id="o-analyze"></div>
+  </section>
+
+  <!-- ─ 02 텍스트 ─ -->
+  <section class="mod" id="m-text">
+    <header class="mod-h">
+      <div class="mod-k">MODULE 02</div>
+      <h1>텍스트 추출</h1>
+      <p>PDF에서 텍스트만 뽑아 <code>.txt</code>로 저장합니다. 페이지마다 반복되는 머리말·꼬리말과 쪽번호를 걸러내는 후처리를 넣었습니다.</p>
+      <div class="fmt">지원 형식 <code>.pdf</code> · 스캔본(이미지 PDF)은 텍스트 정보가 없어 추출되지 않습니다</div>
+    </header>
+
+    <div class="opts">
+      <label class="opt"><input type="checkbox" id="t-clean" checked><span><b>반복 머리말·꼬리말 제거</b>페이지마다 되풀이되는 줄과 쪽번호를 걸러냅니다</span></label>
+      <label class="opt"><input type="checkbox" id="t-dehyphen" checked><span><b>줄 끝 하이픈 병합</b>영문에서 줄바꿈으로 잘린 단어를 이어 붙입니다</span></label>
+      <label class="opt"><input type="checkbox" id="t-pagemark"><span><b>페이지 구분선 삽입</b>원본 쪽 경계를 표시해 둡니다</span></label>
+    </div>
+
+    <div class="drop" id="d-text" tabindex="0" role="button" aria-label="PDF 선택 또는 끌어다 놓기">
+      <input type="file" id="f-text" multiple accept=".pdf" hidden>
+      <div class="drop-i">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 3v5h5M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M8.5 13h7M8.5 16.5h5"/></svg>
+        <strong>PDF를 끌어다 놓거나 클릭해서 선택</strong>
+        <span>여러 파일을 올리면 각각 .txt로 만들어 ZIP으로 묶어 드립니다</span>
+      </div>
+    </div>
+
+    <div class="out" id="o-text"></div>
+  </section>
+
+  <!-- ─ 03 이미지 ─ -->
+  <section class="mod" id="m-image">
+    <header class="mod-h">
+      <div class="mod-k">MODULE 03</div>
+      <h1>이미지 추출</h1>
+      <p>PDF 안의 그림을 JPG로 꺼냅니다. 뽑아낸 그림을 미리 보고 필요한 것만 골라 담을 수 있습니다.</p>
+      <div class="fmt">지원 형식 <code>.pdf</code></div>
+    </header>
+
+    <div class="opts">
+      <div class="opt-row">
+        <label class="fld"><span>추출 방식</span>
+          <select id="i-mode">
+            <option value="embedded">삽입된 그림만 꺼내기 (원본 화질)</option>
+            <option value="page">페이지 전체를 그림으로 (도표·수식 포함)</option>
+          </select>
+        </label>
+        <label class="fld"><span>최소 크기 (px)</span>
+          <input type="number" id="i-min" value="80" min="0" max="2000" step="10">
+        </label>
+        <label class="fld"><span>JPG 품질</span>
+          <input type="range" id="i-q" min="50" max="100" value="88">
+          <output id="i-qv">88</output>
+        </label>
+        <label class="fld" id="i-dpi-wrap" hidden><span>해상도 (DPI)</span>
+          <input type="number" id="i-dpi" value="150" min="72" max="400" step="6">
+        </label>
+      </div>
+      <p class="hint">최소 크기는 로고나 구분선 같은 잡티 이미지를 걸러내는 기준입니다. 가로·세로 중 하나라도 이 값보다 작으면 제외합니다.</p>
+    </div>
+
+    <div class="drop" id="d-image" tabindex="0" role="button" aria-label="PDF 선택 또는 끌어다 놓기">
+      <input type="file" id="f-image" multiple accept=".pdf" hidden>
+      <div class="drop-i">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-5 5-2-2-6 6"/></svg>
+        <strong>PDF를 끌어다 놓거나 클릭해서 선택</strong>
+        <span>추출한 그림은 미리보기에서 골라 ZIP으로 받을 수 있습니다</span>
+      </div>
+    </div>
+
+    <div class="out" id="o-image"></div>
+  </section>
+
+  <!-- ─ 04 조립 ─ -->
+  <section class="mod" id="m-build">
+    <header class="mod-h">
+      <div class="mod-k">MODULE 04</div>
+      <h1>문서 조립</h1>
+      <p>PDF 한 건에서 텍스트와 그림을 동시에 꺼내, 본문과 그림이 한 흐름으로 배치된 편집 가능한 문서로 다시 묶습니다.</p>
+      <div class="fmt">출력 형식 <code>.docx</code> <code>.hwpx</code><span class="beta">실험적</span> <code>.html</code> <code>.zip</code></div>
+    </header>
+
+    <div class="notice">
+      <strong>HWPX 출력에 관하여</strong>
+      HWPX는 한글 문서의 개방형 표준이지만, 브라우저에서 조립한 파일은 한글 버전에 따라 열리지 않을 수 있습니다. 그래서 같은 내용을 DOCX로도 함께 만듭니다. HWPX가 열리지 않으면 DOCX를 한글에서 불러오기로 여시면 됩니다.
+    </div>
+
+    <div class="opts">
+      <div class="opt-row">
+        <label class="fld"><span>문서 제목</span><input type="text" id="b-title" placeholder="파일명에서 자동으로 채웁니다"></label>
+        <label class="fld"><span>그림 배치</span>
+          <select id="b-place">
+            <option value="inline">본문 안 원래 쪽 위치에</option>
+            <option value="append">본문 뒤에 모아서</option>
+          </select>
+        </label>
+        <label class="fld"><span>최소 그림 크기 (px)</span><input type="number" id="b-min" value="80" min="0" step="10"></label>
+      </div>
+      <label class="opt"><input type="checkbox" id="b-clean" checked><span><b>머리말·꼬리말 정리</b>반복되는 줄과 쪽번호를 빼고 본문만 담습니다</span></label>
+    </div>
+
+    <div class="drop" id="d-build" tabindex="0" role="button" aria-label="PDF 선택 또는 끌어다 놓기">
+      <input type="file" id="f-build" accept=".pdf" hidden>
+      <div class="drop-i">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7V5a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v2"/><path d="M3.5 9h17l-1.4 9.3A2 2 0 0 1 17.1 20H6.9a2 2 0 0 1-2-1.7z"/></svg>
+        <strong>PDF 한 건을 끌어다 놓거나 클릭해서 선택</strong>
+        <span>텍스트와 그림을 함께 꺼내 하나의 문서로 조립합니다</span>
+      </div>
+    </div>
+
+    <div class="out" id="o-build"></div>
+  </section>
+
+  <footer class="foot">
+    Doc Workbench · 모든 처리는 브라우저 안에서 이루어지며 파일은 외부로 전송되지 않습니다.
+  </footer>
+</main>
+
+<!-- 진행 표시 -->
+<div class="prog" id="prog" hidden role="status" aria-live="polite">
+  <div class="prog-box">
+    <div class="prog-t" id="prog-t">처리 중…</div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="prog-s" id="prog-s"></div>
+  </div>
+</div>
+
+<!--
+  라이브러리 로더 — 저장소에 함께 담긴 vendor/ 파일을 먼저 쓰고,
+  없을 때만 CDN으로 넘어갑니다. 외부망이 막힌 내부망에서도 동작합니다.
+-->
+<script>
+(function () {
+  var CDN = 'https://cdnjs.cloudflare.com/ajax/libs/';
+  var LIBS = [
+    { local: 'vendor/pdf.min.js',             cdn: CDN + 'pdf.js/3.11.174/pdf.min.js',      check: 'pdfjsLib' },
+    { local: 'vendor/jszip.min.js',           cdn: CDN + 'jszip/3.10.1/jszip.min.js',       check: 'JSZip' },
+    { local: 'vendor/mammoth.browser.min.js', cdn: CDN + 'mammoth/1.6.0/mammoth.browser.min.js', check: 'mammoth' }
+  ];
+  window.DW_PDF_WORKER = 'vendor/pdf.worker.min.js';
+
+  function one(src, done) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = function () { done(true); };
+    s.onerror = function () { done(false); };
+    document.head.appendChild(s);
+  }
+
+  function step(i) {
+    if (i >= LIBS.length) { one('assets/app.js', function () {}); return; }
+    var L = LIBS[i];
+    one(L.local, function (ok) {
+      if (ok && window[L.check]) return step(i + 1);
+      if (L.check === 'pdfjsLib') {
+        window.DW_PDF_WORKER = CDN + 'pdf.js/3.11.174/pdf.worker.min.js';
+      }
+      one(L.cdn, function () { step(i + 1); });
+    });
+  }
+  step(0);
+})();
+</script>
+</body>
+</html>
